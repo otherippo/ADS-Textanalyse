@@ -20,12 +20,17 @@ public class TextAnalyse {
 	private static int docCount;
 	private static double docSize;
 	private static int docLength;
+	private static int docSingleLength;
 	private static int docChar;
 	private static String[] wordsArray;
 	private static int docUniqueWords;
 	private static HashSet<String> uniqueWords = new HashSet<>();
-	private static List<String> wordsArrayList = new ArrayList<String>();
+	private static Map<String, Integer> wordWasFoundIn = new HashMap<String, Integer>();
 	private static Map<String, Integer> uniqueWordsOcc = new HashMap<String, Integer>();
+	private static Map<String, Integer> allDocLength = new HashMap<String, Integer>();
+	private static String fileName;
+	private static String wantedWord = "book"; // <-- define word to search for here
+	//private static ArrayList<String> wordWasFoundInFilename = new ArrayList<String>();
 	
 	public static void main(String[] args) throws IOException {
 		//String mystring = "dies ist ein string, oh yeah.";
@@ -33,7 +38,7 @@ public class TextAnalyse {
 		//String[] array = content.split("[\\s,\\.]+");
 		//System.out.println(array[1]);
 		//System.out.println(Arrays.toString(teststring.split("[\\s,\\.]+"))); //.split("[\\s,\\.]+"));
-		System.out.println(Arrays.toString(cleanArray(true)));
+		//System.out.println(Arrays.toString(cleanArray(true)));
 		getBasicInfo();
 
 	}
@@ -81,26 +86,47 @@ public class TextAnalyse {
 		return uniqueWords.size();
 	}
 	
+	private static void getAllDocLength(String nameoffile, int length) {
+		allDocLength.put(path+"/"+nameoffile, length);
+	}
+	
 	//lese array und erstelle hashmap; array-element z.b. wort ist key, value wird dann zur häufigkeit (occurrence)
 	//falls wort (key) schon in hashmap, erhöhe value (häufigkeit) um 1
 	//anderenfalls nimm wort auf (wort ist key) und setze value auf 1 (1x vorgekommen bis jetzt)
-	private static void getWordOccurrence(String[] array){
-		for (int i=0; i<array.length-1; i++) {
-			if (uniqueWordsOcc.containsKey(array[i])) {
-				int value = uniqueWordsOcc.get(array[i]);
-				uniqueWordsOcc.put(array[i], value+1);
-			}
-			else {
-				uniqueWordsOcc.put(array[i], 1);
-			}
+	private static void getContentDetails(String[] array){
+		for (int i=0; i<array.length; i++) {
+			getWordOccurrence(array[i]);
+			findWordInFile(array[i]);
 		}
 	}
 	
-	private static String printOccHashMap(Map<String, Integer> hashmap) {
+	private static void findWordInFile(String arrayElement) {
+		if (arrayElement.equals(wantedWord)) {
+			//wordWasFoundInFilename.add(fileName);
+			hashmContainKey(wordWasFoundIn, path+"/"+fileName+":"+arrayElement);
+			//wordWasFoundIn.put(path+"/"+fileName, 1); //1 als value platzhalter
+		}
+	}
+	
+	private static void getWordOccurrence(String arrayElement) {
+		hashmContainKey(uniqueWordsOcc, arrayElement);		
+	}
+	
+	private static void hashmContainKey(Map<String, Integer> hashmap, String arrayElement) {
+		if (hashmap.containsKey(arrayElement)) {
+			int value = hashmap.get(arrayElement);
+			hashmap.put(arrayElement, value+1);
+		}
+		else {
+			hashmap.put(arrayElement, 1);
+		}
+	}
+	
+	private static String printHashMap(Map<String, Integer> hashmap, String before, String after) {
 		String result = "";
 		Set<Entry<String, Integer>> hashSet=hashmap.entrySet();
         for(Entry<String, Integer> entry:hashSet ) {
-            result += "Wort: "+entry.getKey()+", Häufigkeit: "+entry.getValue()+"\n";
+            result += before+": "+entry.getKey()+"   |   "+after+": "+entry.getValue()+"\n";
         }
         return result;
 	}
@@ -109,8 +135,9 @@ public class TextAnalyse {
 		
 		Files.walk(Paths.get(path)).filter(Files::isRegularFile).filter(p -> p.toString().endsWith(".txt")).forEach(
 				filePath ->{
+				fileName = filePath.getFileName().toString();
 				try {
-					wordsArray = removeNull(readFile(filePath.getFileName().toString()).split("[\\s,\\.]+"));
+					wordsArray = removeNull(readFile(fileName).split("[\\s,\\.]+"));
 				} catch (IOException e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
@@ -122,19 +149,21 @@ public class TextAnalyse {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-				docLength += wordsArray.length;
+				docSingleLength = wordsArray.length;
+				docLength += docSingleLength;
 				try {
-					docChar += readFile(filePath.getFileName().toString()).length();
+					docChar += readFile(fileName).length();
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 				//wordsArrayList.addAll(Arrays.asList(wordsArray));
-				getWordOccurrence(wordsArray);
-				
+				docUniqueWords += uniqueWords(wordsArray);
+				getContentDetails(wordsArray);
+				getAllDocLength(fileName, docSingleLength);
 				
 			});
-		docUniqueWords = uniqueWords(wordsArray);
+		
 		//return docCount;
 		System.out.println("********** STATISTIK : **********");
 		System.out.println("Anzahl Dokumente: "+docCount);
@@ -142,7 +171,11 @@ public class TextAnalyse {
 		System.out.println("Anzahl Wörter: "+docLength);
 		System.out.println("Anzahl unterschiedliche Wörter: "+docUniqueWords);
 		System.out.println("Durchschnittliche Anzahl Zeichen (inkl. Leerzeichen): "+docChar/docCount); //inkl. Leerzeichen!
-		System.out.println("Inhalt HashMap: \n"+printOccHashMap(uniqueWordsOcc));
+		System.out.println("Häufigkeit aller Wörter: \n"+printHashMap(uniqueWordsOcc,"Wort","Häufigkeit"));
+		System.out.println("Anzahl Wörter jedes Dokuments: \n"+printHashMap(allDocLength,"Datei","Anzahl Wörter"));
+		
+		//word to search for needs to be defined at line 32
+		System.out.println("Die Wortsuche ergab folgende Treffer: \n"+printHashMap(wordWasFoundIn,"Datei:Keyword","Gefunden"));
 	}
 	
 }
