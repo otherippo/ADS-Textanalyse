@@ -1,12 +1,17 @@
-
 import java.io.IOException;
 import java.lang.String;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 public class TextAnalyse {
 	private static String path = "C:/Users/Oliver/Mega/Eclipse Oxygen/Mein Workspace/ADS-Textanalyse";
@@ -18,6 +23,9 @@ public class TextAnalyse {
 	private static int docChar;
 	private static String[] wordsArray;
 	private static int docUniqueWords;
+	private static HashSet<String> uniqueWords = new HashSet<>();
+	private static List<String> wordsArrayList = new ArrayList<String>();
+	private static Map<String, Integer> uniqueWordsOcc = new HashMap<String, Integer>();
 	
 	public static void main(String[] args) throws IOException {
 		//String mystring = "dies ist ein string, oh yeah.";
@@ -69,8 +77,32 @@ public class TextAnalyse {
 	}
 	
 	private static int uniqueWords(String[] array){
-		HashSet<String> uniqueWords = new HashSet<>(Arrays.asList(array));
+		uniqueWords = new HashSet<>(Arrays.asList(array));
 		return uniqueWords.size();
+	}
+	
+	//lese array und erstelle hashmap; array-element z.b. wort ist key, value wird dann zur häufigkeit (occurrence)
+	//falls wort (key) schon in hashmap, erhöhe value (häufigkeit) um 1
+	//anderenfalls nimm wort auf (wort ist key) und setze value auf 1 (1x vorgekommen bis jetzt)
+	private static void getWordOccurrence(String[] array){
+		for (int i=0; i<array.length-1; i++) {
+			if (uniqueWordsOcc.containsKey(array[i])) {
+				int value = uniqueWordsOcc.get(array[i]);
+				uniqueWordsOcc.put(array[i], value+1);
+			}
+			else {
+				uniqueWordsOcc.put(array[i], 1);
+			}
+		}
+	}
+	
+	private static String printOccHashMap(Map<String, Integer> hashmap) {
+		String result = "";
+		Set<Entry<String, Integer>> hashSet=hashmap.entrySet();
+        for(Entry<String, Integer> entry:hashSet ) {
+            result += "Wort: "+entry.getKey()+", Häufigkeit: "+entry.getValue()+"\n";
+        }
+        return result;
 	}
 	
 	public static void getBasicInfo() throws IOException{
@@ -97,9 +129,12 @@ public class TextAnalyse {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-				docUniqueWords = uniqueWords(wordsArray);
+				//wordsArrayList.addAll(Arrays.asList(wordsArray));
+				getWordOccurrence(wordsArray);
+				
 				
 			});
+		docUniqueWords = uniqueWords(wordsArray);
 		//return docCount;
 		System.out.println("********** STATISTIK : **********");
 		System.out.println("Anzahl Dokumente: "+docCount);
@@ -107,6 +142,7 @@ public class TextAnalyse {
 		System.out.println("Anzahl Wörter: "+docLength);
 		System.out.println("Anzahl unterschiedliche Wörter: "+docUniqueWords);
 		System.out.println("Durchschnittliche Anzahl Zeichen (inkl. Leerzeichen): "+docChar/docCount); //inkl. Leerzeichen!
+		System.out.println("Inhalt HashMap: \n"+printOccHashMap(uniqueWordsOcc));
 	}
 	
 }
