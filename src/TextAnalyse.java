@@ -30,6 +30,7 @@ public class TextAnalyse {
 	private static Map<String, Integer> allDocLength = new HashMap<String, Integer>();
 	private static String fileName;
 	private static String wantedWord = "book"; // <-- define word to search for here
+	private static String findWordInFileNot = "Keine Treffer für \""+wantedWord+"\"";
 	//private static ArrayList<String> wordWasFoundInFilename = new ArrayList<String>();
 	
 	public static void main(String[] args) throws IOException {
@@ -102,9 +103,8 @@ public class TextAnalyse {
 	
 	private static void findWordInFile(String arrayElement) {
 		if (arrayElement.equals(wantedWord)) {
-			//wordWasFoundInFilename.add(fileName);
 			hashmContainKey(wordWasFoundIn, path+"/"+fileName+":"+arrayElement);
-			//wordWasFoundIn.put(path+"/"+fileName, 1); //1 als value platzhalter
+			findWordInFileNot = ""; //if word was found in file there is no need to print out "no matches"
 		}
 	}
 	
@@ -127,6 +127,7 @@ public class TextAnalyse {
 		Set<Entry<String, Integer>> hashSet=hashmap.entrySet();
         for(Entry<String, Integer> entry:hashSet ) {
             result += before+": "+entry.getKey()+"   |   "+after+": "+entry.getValue()+"\n";
+            docUniqueWords++; //for every entry in hashmap increase by 1 to get the mnumber off unique words
         }
         return result;
 	}
@@ -158,24 +159,27 @@ public class TextAnalyse {
 					e.printStackTrace();
 				}
 				//wordsArrayList.addAll(Arrays.asList(wordsArray));
-				docUniqueWords += uniqueWords(wordsArray);
+				//docUniqueWords += uniqueWords(wordsArray); returns unique words from file 1 + unique words from file 2 etc -> wrong!
 				getContentDetails(wordsArray);
 				getAllDocLength(fileName, docSingleLength);
 				
 			});
 		
 		//return docCount;
+		String wordOcc = printHashMap(uniqueWordsOcc,"Wort","Häufigkeit");
 		System.out.println("********** STATISTIK : **********");
 		System.out.println("Anzahl Dokumente: "+docCount);
 		System.out.println("Dokumentengrösse total: "+docSize/1000+" KB");
 		System.out.println("Anzahl Wörter: "+docLength);
 		System.out.println("Anzahl unterschiedliche Wörter: "+docUniqueWords);
 		System.out.println("Durchschnittliche Anzahl Zeichen (inkl. Leerzeichen): "+docChar/docCount); //inkl. Leerzeichen!
-		System.out.println("Häufigkeit aller Wörter: \n"+printHashMap(uniqueWordsOcc,"Wort","Häufigkeit"));
+		System.out.println("Häufigkeit aller Wörter: \n"+wordOcc);
 		System.out.println("Anzahl Wörter jedes Dokuments: \n"+printHashMap(allDocLength,"Datei","Anzahl Wörter"));
 		
 		//word to search for needs to be defined at line 32
-		System.out.println("Die Wortsuche ergab folgende Treffer: \n"+printHashMap(wordWasFoundIn,"Datei:Keyword","Gefunden"));
+		System.out.println("Die Wortsuche ergab folgende Treffer: \n"+findWordInFileNot+printHashMap(wordWasFoundIn,"Datei:Keyword","Gefunden"));
+		
+		//System.out.println("values von uniqueWordsOcc: "+uniqueWordsOcc.values());
 	}
 	
 }
