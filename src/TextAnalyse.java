@@ -6,12 +6,16 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Scanner;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class TextAnalyse {
 	private static String path = "C:/Users/Oliver/Mega/Eclipse Oxygen/Mein Workspace/ADS-Textanalyse";
@@ -31,7 +35,8 @@ public class TextAnalyse {
 	private static String fileName;
 	private static String wantedWord = "book"; // <-- define word to search for here
 	private static String findWordInFileNot = "Keine Treffer für \""+wantedWord+"\"";
-	//private static ArrayList<String> wordWasFoundInFilename = new ArrayList<String>();
+	private static Map<String, Double> allDocSizes = new HashMap<String, Double>();
+	//private static ArrayList<Double> allDocSizes = new ArrayList<Double>();
 	
 	public static void main(String[] args) throws IOException {
 		//String mystring = "dies ist ein string, oh yeah.";
@@ -41,7 +46,7 @@ public class TextAnalyse {
 		//System.out.println(Arrays.toString(teststring.split("[\\s,\\.]+"))); //.split("[\\s,\\.]+"));
 		//System.out.println(Arrays.toString(cleanArray(true)));
 		getBasicInfo();
-
+		commandoCenter();
 	}
 	
 	private static String[] cleanArray(Boolean cleaned) throws IOException{
@@ -127,9 +132,99 @@ public class TextAnalyse {
 		Set<Entry<String, Integer>> hashSet=hashmap.entrySet();
         for(Entry<String, Integer> entry:hashSet ) {
             result += before+": "+entry.getKey()+"   |   "+after+": "+entry.getValue()+"\n";
-            docUniqueWords++; //for every entry in hashmap increase by 1 to get the mnumber off unique words
+            docUniqueWords++; //for every entry in hashmap increase by 1 to get the number off unique words
         }
         return result;
+	}
+	
+	private static String allDocSizesCompare(String compare) {
+		String[] array = removeNull(compare.split("[\\s]+"));
+		String result = "";
+ 		Set<Entry<String, Double>> hashSet=allDocSizes.entrySet();
+         for(Entry<String, Double> entry:hashSet ) {
+        	 switch(array[0]) {
+        	 case "all" :
+        		 result += entry.getKey()+", "+entry.getValue()+" KB \n";
+        		 break;
+        	 case "<" :
+        		 if (array.length == 2) {
+        			 if (entry.getValue() < Double.parseDouble(array[1])) {
+            			 result += entry.getKey()+", "+entry.getValue()+" KB \n";
+                	 }
+        		 }
+        		 else if (array[2].equals("<")) {
+        			 if (entry.getValue() < Double.parseDouble(array[1]) && entry.getValue() < Double.parseDouble(array[3])) {
+            			 result += entry.getKey()+", "+entry.getValue()+" KB \n";
+                	 }
+        		 }
+        		 else if (array[2].equals(">")) {
+        			 if (entry.getValue() < Double.parseDouble(array[1]) && entry.getValue() > Double.parseDouble(array[3])) {
+            			 result += entry.getKey()+", "+entry.getValue()+" KB \n";
+                	 }
+        		 }
+        		 else if (array[2].equals("=")) {
+        			 if (entry.getValue() < Double.parseDouble(array[1]) && entry.getValue() == Double.parseDouble(array[1])) {
+            			 result += entry.getKey()+", "+entry.getValue()+" KB \n";
+                	 }
+        		 }
+        		 break;
+        	 case ">" :
+        		 if (array.length == 2) {
+        			 if (entry.getValue() > Double.parseDouble(array[1])) {
+            			 result += entry.getKey()+", "+entry.getValue()+" KB \n";
+                	 }
+        		 }
+        		 else if (array[2].equals(">")) {
+        			 if (entry.getValue() > Double.parseDouble(array[1]) && entry.getValue() > Double.parseDouble(array[3])) {
+            			 result += entry.getKey()+", "+entry.getValue()+" KB \n";
+                	 }
+        		 }
+        		 else if (array[2].equals("<")) {
+        			 if (entry.getValue() > Double.parseDouble(array[1]) && entry.getValue() < Double.parseDouble(array[3])) {
+            			 result += entry.getKey()+", "+entry.getValue()+" KB \n";
+                	 }
+        		 }
+        		 else if (array[2].equals("=")) {
+        			 if (entry.getValue() > Double.parseDouble(array[1]) && entry.getValue() == Double.parseDouble(array[1])) {
+            			 result += entry.getKey()+", "+entry.getValue()+" KB \n";
+                	 }
+        		 }
+        		 break;
+        	 case "=" :
+        		 if (array.length == 2) {
+        			 if (entry.getValue() == Double.parseDouble(array[1])) {
+            			 result += entry.getKey()+", "+entry.getValue()+" KB \n";
+                	 }
+        		 }
+        		 else if (array[2].equals("<")) {
+        			 if (entry.getValue() == Double.parseDouble(array[1]) && entry.getValue() < Double.parseDouble(array[3])) {
+            			 result += entry.getKey()+", "+entry.getValue()+" KB \n";
+                	 }
+        		 }
+        		 else if (array[2].equals(">")) {
+        			 if (entry.getValue() == Double.parseDouble(array[1]) && entry.getValue() > Double.parseDouble(array[3])) {
+            			 result += entry.getKey()+", "+entry.getValue()+" KB \n";
+                	 }
+        		 }
+        		 break;
+        	 }
+         }
+         if (result.equals("")) {
+        	 result = "Keine Ergebnisse gefunden";
+         }
+         return result;
+	}
+	
+	public static <K, V extends Comparable<? super V>> Map<K, V> sortByValue(Map<K, V> map) {
+	    return map.entrySet()
+	    		.stream()
+	    		.sorted(Map.Entry.comparingByValue(Collections.reverseOrder()))
+	    		.collect(Collectors.toMap(
+	    				Map.Entry::getKey,
+	    				Map.Entry::getValue,
+	    				(e1, e2) -> e1,
+	    				LinkedHashMap::new
+	    				));
 	}
 	
 	public static void getBasicInfo() throws IOException{
@@ -145,7 +240,9 @@ public class TextAnalyse {
 				}
 				docCount++;
 				try {
-					docSize += Files.size(filePath);
+					double docSingleSize = Files.size(filePath);
+					allDocSizes.put(path+"/"+fileName,docSingleSize/1000);
+					docSize += docSingleSize;
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -162,7 +259,9 @@ public class TextAnalyse {
 				//docUniqueWords += uniqueWords(wordsArray); returns unique words from file 1 + unique words from file 2 etc -> wrong!
 				getContentDetails(wordsArray);
 				getAllDocLength(fileName, docSingleLength);
-				
+				//sort hashmaps descending according to value (biggest value first, smallest last):
+				allDocSizes = sortByValue(allDocSizes);
+				allDocLength = sortByValue(allDocLength);
 			});
 		
 		//return docCount;
@@ -177,9 +276,54 @@ public class TextAnalyse {
 		System.out.println("Anzahl Wörter jedes Dokuments: \n"+printHashMap(allDocLength,"Datei","Anzahl Wörter"));
 		
 		//word to search for needs to be defined at line 32
-		System.out.println("Die Wortsuche ergab folgende Treffer: \n"+findWordInFileNot+printHashMap(wordWasFoundIn,"Datei:Keyword","Gefunden"));
+		System.out.println("Die Wortsuche ergab folgende Treffer: \n"+findWordInFileNot+printHashMap(wordWasFoundIn,"Format Datei:Keyword","Gefunden"));
 		
 		//System.out.println("values von uniqueWordsOcc: "+uniqueWordsOcc.values());
+		
+	}
+	
+	private static void commandoCenter() {
+		while (true) {
+			System.out.println("\n<------------------------------------------------------------>");
+			System.out.println("Befehl eingeben: (\"help\" für Hilfe   |   \"exit\" um zu beenden)");
+			Scanner scanInput = new Scanner(System.in);
+			String userInput = scanInput.nextLine();
+			//System.out.println("Ihre Eingabe: "+userInput);
+			switch(userInput) {
+	         case "search" :
+	        	System.out.println("Can't be done in console. Terminate, enter word in code at line 33 and rerun.");
+	        	System.out.println("Terminate now? yes or no");
+				String userInput2 = scanInput.nextLine();
+	        	if (userInput2.equals("yes")) {
+	        		scanInput.close();
+					System.out.println("Beendet");
+	        		return;
+	        	}
+	            break;
+	         case "size" :
+	        	 while (true) {
+	        		 System.out.println("Beenden durch Eingabe von \"return\"");
+	        		 System.out.println("Eingabe: \"< 5.0\" oder \"> 1.25\" oder \"= 0.111\" oder Kombination z.B. < 1 > 0.1 | Zahl in KiloBytes als double");
+	        		 String userInput3 = scanInput.nextLine();
+	        		 if (userInput3.equals("return")) {
+	        			 break;
+	        		 }
+	        		 System.out.println(allDocSizesCompare(userInput3)+"\n");
+	        	 }
+	         case "help" :
+	            System.out.println("Folgende Befehle sind verfügbar:");
+	            System.out.println("-search: Gibt aus wo (in welchen Dateien) und wie häufig das Suchwort vorkommt");
+	            System.out.println("-size: Gibt alle Dateien aus oder nur diejenigen welche der Eingabe <, >, = Zahl (KB als double) \noder einer Kombination davon entsprechen");
+	            break;
+	         case "exit" :
+	        	scanInput.close();
+				System.out.println("Beendet");
+				return;
+	         default :
+	            System.out.println("Ungültige Eingabe. Bitte versuchen Sie es erneut.");
+	            break;
+			}
+		}
 	}
 	
 }
