@@ -36,6 +36,8 @@ public class TextAnalyse {
 	private static String wantedWord = "book"; // <-- define word to search for here
 	private static String findWordInFileNot = "Keine Treffer für \""+wantedWord+"\"";
 	private static Map<String, Double> allDocSizes = new HashMap<String, Double>();
+	private static Map<String, String[]> allDocs = new HashMap<String, String[]>();
+	private static Map<String, Integer> allDocsResult = new HashMap<String, Integer>();
 	//private static ArrayList<Double> allDocSizes = new ArrayList<Double>();
 	
 	public static void main(String[] args) throws IOException {
@@ -215,7 +217,90 @@ public class TextAnalyse {
          return result;
 	}
 	
+	private static String searchAllDocs(String searchString) {
+		allDocsResult.clear();
+		String[] searchArray = searchString.split("[\\s]+");
+		int searchArrayLength = searchArray.length;
+		String result = "Keine Ergebnisse\n";
+		Set<Entry<String, String[]>> hashSet=allDocs.entrySet();
+        for(Entry<String, String[]> entry:hashSet ) {
+        	String[] array = entry.getValue();
+    		Boolean oneWordFound = false;
+    		Boolean bothWordsFound = false;
+    		Boolean neededWordFound = false;
+    		String otherWord = "";
+        	for (int i=0; i<array.length; i++) {
+	        	if (searchArrayLength == 1) {
+	        		//suche nach 1 wort
+	        		if (searchArray[0].equals(array[i])) {
+	        			hashmContainKey(allDocsResult, entry.getKey());
+	        			result = "";
+	        		}
+	        	}
+	        	else if (searchArrayLength == 2) {
+	        		//suche nach 2 aufeinanderfolgenden wörtern
+	        		//ignoriere letztes element im array
+	        		if (i+1<array.length && searchArray[0].equals(array[i]) && searchArray[1].equals(array[i+1])) {
+	        			hashmContainKey(allDocsResult, entry.getKey());
+	        			result = "";
+	        		}
+	        	}
+	        	else if (searchArrayLength == 3) {
+	        		//suche mit wort1 oder wort2 bzw wort1 und wort2
+	        		if (searchArray[1].equals("und")) {
+	        			if(!oneWordFound && searchArray[0].equals(array[i])) {
+	        				oneWordFound = true;
+	        				otherWord = searchArray[2];
+	        			}
+	        			else if(!oneWordFound && searchArray[2].equals(array[i])) {
+	        				oneWordFound = true;
+	        				otherWord = searchArray[0];
+	        			}
+	        			else if (oneWordFound && !bothWordsFound && otherWord.equals(array[i])) {
+	        				bothWordsFound = true;
+	        				hashmContainKey(allDocsResult, entry.getKey());
+		        			result = "";
+	        			}
+	        		}
+	        		if (searchArray[1].equals("oder")) {
+	        			if (!oneWordFound && (searchArray[0].equals(array[i]) || searchArray[2].equals(array[i]))) {
+	        				oneWordFound = true;
+	        				hashmContainKey(allDocsResult, entry.getKey());
+		        			result = "";
+	        			}
+	        		}
+	        		if (searchArray[1].equals("xor")) {
+	        			if (!oneWordFound && searchArray[2].equals(array[i])) {
+	        				oneWordFound = true;
+	        			}
+	        			else if (!oneWordFound && !neededWordFound && searchArray[0].equals(array[i])) {
+	        				neededWordFound = true;
+	        			}
+	        			else if (!oneWordFound && neededWordFound && i==array.length-1) {
+	        				hashmContainKey(allDocsResult, entry.getKey());
+		        			result = "";
+	        			}
+	        		}
+	        	}
+        	}
+            //result += before+": "+entry.getKey()+"   |   "+after+": "+entry.getValue()+"\n";
+        }
+        return result;
+	}
+	
 	public static <K, V extends Comparable<? super V>> Map<K, V> sortByValue(Map<K, V> map) {
+	    return map.entrySet()
+	    		.stream()
+	    		.sorted(Map.Entry.comparingByValue(Collections.reverseOrder()))
+	    		.collect(Collectors.toMap(
+	    				Map.Entry::getKey,
+	    				Map.Entry::getValue,
+	    				(e1, e2) -> e1,
+	    				LinkedHashMap::new
+	    				));
+	}
+	
+	public static <K, V extends Comparable<? super V>> Map<String, String[]> sortByValue2(Map<String, String[]> map) {
 	    return map.entrySet()
 	    		.stream()
 	    		.sorted(Map.Entry.comparingByValue(Collections.reverseOrder()))
@@ -259,9 +344,11 @@ public class TextAnalyse {
 				//docUniqueWords += uniqueWords(wordsArray); returns unique words from file 1 + unique words from file 2 etc -> wrong!
 				getContentDetails(wordsArray);
 				getAllDocLength(fileName, docSingleLength);
+				allDocs.put(path+"/"+fileName, wordsArray);
 				//sort hashmaps descending according to value (biggest value first, smallest last):
 				allDocSizes = sortByValue(allDocSizes);
 				allDocLength = sortByValue(allDocLength);
+				//allDocs = sortByValue2(allDocs);
 			});
 		
 		//return docCount;
@@ -291,14 +378,17 @@ public class TextAnalyse {
 			//System.out.println("Ihre Eingabe: "+userInput);
 			switch(userInput) {
 	         case "search" :
-	        	System.out.println("Can't be done in console. Terminate, enter word in code at line 33 and rerun.");
-	        	System.out.println("Terminate now? yes or no");
-				String userInput2 = scanInput.nextLine();
-	        	if (userInput2.equals("yes")) {
-	        		scanInput.close();
-					System.out.println("Beendet");
-	        		return;
-	        	}
+	        	 while (true) {
+	        		 System.out.println("Beenden durch Eingabe von \"return\"");
+	        		 System.out.println("Eingabe: Suchwort/-wörter/-phrase z.B. \"book\" oder \"the book\" (2 aufeinanderfolgende Wörter) oder \"the und book\" (beide müssen vorkommen; und ist Schlüsselwort)");
+	        		 System.out.println("oder \"the oder book\" (eins von beiden muss vorkommen; oder ist Schlüsselwort) oder \"the xor book\" (book darf NICHT vorkommen; xor ist Schlüsselwort)");
+	        		 String userInput2 = scanInput.nextLine();
+	        		 if (userInput2.equals("return")) {
+	        			 break;
+	        		 }
+	        		 System.out.print(searchAllDocs(userInput2));
+		        	 System.out.println(printHashMap(allDocsResult,"Datei","Gefunden"));
+	        	 }	        	
 	            break;
 	         case "size" :
 	        	 while (true) {
