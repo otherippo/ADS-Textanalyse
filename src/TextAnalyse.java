@@ -9,17 +9,22 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
+
+import me.xdrop.fuzzywuzzy.Applicable;
+import me.xdrop.fuzzywuzzy.FuzzySearch;
 
 public class TextAnalyse {
 	private static String path = "C:/Users/Oliver/Mega/Eclipse Oxygen/Mein Workspace/ADS-Textanalyse";
-	//private static String teststring = " This book really changed the way I see different things in the world.  It also instilled a greater love in me, and questioned a lot of my thoughts and actions.  A must read for those who want to grow in intimacy with  Christ!     ";
 	private static String testresult;
 	private static int docCount;
 	private static double docSize;
@@ -38,15 +43,11 @@ public class TextAnalyse {
 	private static Map<String, Double> allDocSizes = new HashMap<String, Double>();
 	private static Map<String, String[]> allDocs = new HashMap<String, String[]>();
 	private static Map<String, Integer> allDocsResult = new HashMap<String, Integer>();
-	//private static ArrayList<Double> allDocSizes = new ArrayList<Double>();
+	private static String[] stopWords = {"a","a's","able","about","above","according","accordingly","across","actually","after","afterwards","again","against","ain't","all","allow","allows","almost","alone","along","already","also","although","always","am","among","amongst","an","and","another","any","anybody","anyhow","anyone","anything","anyway","anyways","anywhere","apart","appear","appreciate","appropriate","are","aren't","around","as","aside","ask","asking","associated","at","available","away","awfully","b","be","became","because","become","becomes","becoming","been","before","beforehand","behind","being","believe","below","beside","besides","best","better","between","beyond","both","brief","but","by","c","c'mon","c's","came","can","can't","cannot","cant","cause","causes","certain","certainly","changes","clearly","co","com","come","comes","concerning","consequently","consider","considering","contain","containing","contains","corresponding","could","couldn't","course","currently","d","definitely","described","despite","did","didn't","different","do","does","doesn't","doing","don't","done","down","downwards","during","e","each","edu","eg","eight","either","else","elsewhere","enough","entirely","especially","et","etc","even","ever","every","everybody","everyone","everything","everywhere","ex","exactly","example","except","f","far","few","fifth","first","five","followed","following","follows","for","former","formerly","forth","four","from","further","furthermore","g","get","gets","getting","given","gives","go","goes","going","gone","got","gotten","greetings","h","had","hadn't","happens","hardly","has","hasn't","have","haven't","having","he","he's","hello","help","hence","her","here","here's","hereafter","hereby","herein","hereupon","hers","herself","hi","him","himself","his","hither","hopefully","how","howbeit","however","i","i'd","i'll","i'm","i've","ie","if","ignored","immediate","in","inasmuch","inc","indeed","indicate","indicated","indicates","inner","insofar","instead","into","inward","is","isn't","it","it'd","it'll","it's","its","itself","j","ju","","k","keep","keeps","kept","know","knows","known","l","last","lately","later","latter","latterly","least","less","lest","let","let's","like","liked","likely","little","look","looking","looks","ltd","m","mainly","many","may","maybe","me","mean","meanwhile","merely","might","more","moreover","most","mostly","much","must","my","myself","n","name","namely","nd","near","nearly","necessary","need","needs","neither","never","nevertheless","new","next","nine","no","nobody","non","none","noone","nor","normally","not","nothing","novel","now","nowhere","o","obviously","of","off","often","oh","ok","okay","old","on","once","one","ones","only","onto","or","other","others","otherwise","ought","our","ours","ourselves","out","outside","over","overall","own","p","particular","particularly","per","perhaps","placed","please","plus","possible","presumably","probably","provides","q","que","quite","qv","r","rather","rd","re","really","reasonably","regarding","regardless","regards","relatively","respectively","right","s","said","same","saw","say","saying","says","second","secondly","see","seeing","seem","seemed","seeming","seems","seen","self","selves","sensible","sent","serious","seriously","seven","several","shall","she","should","shouldn't","since","six","so","some","somebody","somehow","someone","something","sometime","sometimes","somewhat","somewhere","soon","sorry","specified","specify","specifying","still","sub","such","sup","sure","t","t's","take","taken","tell","tends","th","than","thank","thanks","thanx","that","that's","thats","the","their","theirs","them","themselves","then","thence","there","there's","thereafter","thereby","therefore","therein","theres","thereupon","these","they","they'd","they'll","they're","they've","think","third","this","thorough","thoroughly","those","though","three","through","throughout","thru","thus","to","together","too","took","toward","towards","tried","tries","truly","try","trying","twice","two","u","un","under","unfortunately","unless","unlikely","until","unto","up","upon","us","use","used","useful","uses","using","usually","uucp","v","value","various","very","via","viz","vs","w","want","wants","was","wasn't","way","we","we'd","we'll","we're","we've","welcome","well","went","were","weren't","what","what's","whatever","when","whence","whenever","where","where's","whereafter","whereas","whereby","wherein","whereupon","wherever","whether","which","while","whither","who","who's","whoever","whole","whom","whose","why","will","willing","wish","with","within","without","won't","wonder","would","would","wouldn't","x","y","yes","yet","you","you'd","you'll","you're","you've","your","yours","yourself","yourselves","z","zero"};
+	private static List<String> stopWordsList = Arrays.asList(stopWords);
+	private static Map<String, Integer> importantWords = new HashMap<String, Integer>();
 	
 	public static void main(String[] args) throws IOException {
-		//String mystring = "dies ist ein string, oh yeah.";
-		//String content = readFile("Life Changing.txt");
-		//String[] array = content.split("[\\s,\\.]+");
-		//System.out.println(array[1]);
-		//System.out.println(Arrays.toString(teststring.split("[\\s,\\.]+"))); //.split("[\\s,\\.]+"));
-		//System.out.println(Arrays.toString(cleanArray(true)));
 		getBasicInfo();
 		commandoCenter();
 	}
@@ -116,7 +117,8 @@ public class TextAnalyse {
 	}
 	
 	private static void getWordOccurrence(String arrayElement) {
-		hashmContainKey(uniqueWordsOcc, arrayElement);		
+		hashmContainKey(uniqueWordsOcc, arrayElement);
+		uniqueWordsOcc = sortByKey(uniqueWordsOcc);
 	}
 	
 	private static void hashmContainKey(Map<String, Integer> hashmap, String arrayElement) {
@@ -240,9 +242,18 @@ public class TextAnalyse {
 	        	else if (searchArrayLength == 2) {
 	        		//suche nach 2 aufeinanderfolgenden wörtern
 	        		//ignoriere letztes element im array
-	        		if (i+1<array.length && searchArray[0].equals(array[i]) && searchArray[1].equals(array[i+1])) {
-	        			hashmContainKey(allDocsResult, entry.getKey());
-	        			result = "";
+	        		if (searchArray[1].equals("*")) {
+	        			//findet unvollständige ähnliche wörter; suche nach student matcht auch studenten, studentinnen u.ä. 
+	        			if (array[i].toLowerCase().contains(searchArray[0].toLowerCase())) {
+		        			hashmContainKey(allDocsResult, entry.getKey());
+		        			result = "";
+		        		}
+	        		}
+	        		else {
+	        			if (i+1<array.length && searchArray[0].equals(array[i]) && searchArray[1].equals(array[i+1])) {
+		        			hashmContainKey(allDocsResult, entry.getKey());
+		        			result = "";
+		        		}
 	        		}
 	        	}
 	        	else if (searchArrayLength == 3) {
@@ -262,14 +273,14 @@ public class TextAnalyse {
 		        			result = "";
 	        			}
 	        		}
-	        		if (searchArray[1].equals("oder")) {
+	        		else if (searchArray[1].equals("oder")) {
 	        			if (!oneWordFound && (searchArray[0].equals(array[i]) || searchArray[2].equals(array[i]))) {
 	        				oneWordFound = true;
 	        				hashmContainKey(allDocsResult, entry.getKey());
 		        			result = "";
 	        			}
 	        		}
-	        		if (searchArray[1].equals("xor")) {
+	        		else if (searchArray[1].equals("xor")) {
 	        			if (!oneWordFound && searchArray[2].equals(array[i])) {
 	        				oneWordFound = true;
 	        			}
@@ -283,9 +294,28 @@ public class TextAnalyse {
 	        		}
 	        	}
         	}
-            //result += before+": "+entry.getKey()+"   |   "+after+": "+entry.getValue()+"\n";
+        	if (searchArray[0].equals("levi")) {
+        		result += "Datei: "+entry.getKey()+"\n";
+        		int percentage = Integer.parseInt(searchArray[2]);
+        		result += FuzzySearch.extractSorted(searchArray[1], Arrays.asList(array), percentage)+"\n";
+    		}
         }
+        allDocsResult = sortByValue(allDocsResult);
         return result;
+	}
+	
+	private static Map<String, Integer> importantWordsGlossary() {
+		importantWords = uniqueWordsOcc;
+		Iterator<Map.Entry<String, Integer>> itr = importantWords.entrySet().iterator();
+		while(itr.hasNext())
+		{
+		   Map.Entry<String, Integer> entry = itr.next();
+		   if(stopWordsList.contains(entry.getKey().toLowerCase())) {
+			   itr.remove();
+		   }
+		}
+        importantWords = sortByValue(importantWords);
+		return importantWords;
 	}
 	
 	public static <K, V extends Comparable<? super V>> Map<K, V> sortByValue(Map<K, V> map) {
@@ -312,6 +342,11 @@ public class TextAnalyse {
 	    				));
 	}
 	
+	public static <K, V> Map<K, V> sortByKey(Map<K, V> map) {
+		Map<K, V> treeMap = new TreeMap<K, V>(map);
+		return treeMap;
+	}
+	
 	public static void getBasicInfo() throws IOException{
 		
 		Files.walk(Paths.get(path)).filter(Files::isRegularFile).filter(p -> p.toString().endsWith(".txt")).forEach(
@@ -320,7 +355,6 @@ public class TextAnalyse {
 				try {
 					wordsArray = removeNull(readFile(fileName).split("[\\s,\\.]+"));
 				} catch (IOException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 				docCount++;
@@ -329,7 +363,6 @@ public class TextAnalyse {
 					allDocSizes.put(path+"/"+fileName,docSingleSize/1000);
 					docSize += docSingleSize;
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 				docSingleLength = wordsArray.length;
@@ -337,22 +370,17 @@ public class TextAnalyse {
 				try {
 					docChar += readFile(fileName).length();
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-				//wordsArrayList.addAll(Arrays.asList(wordsArray));
-				//docUniqueWords += uniqueWords(wordsArray); returns unique words from file 1 + unique words from file 2 etc -> wrong!
 				getContentDetails(wordsArray);
 				getAllDocLength(fileName, docSingleLength);
 				allDocs.put(path+"/"+fileName, wordsArray);
 				//sort hashmaps descending according to value (biggest value first, smallest last):
 				allDocSizes = sortByValue(allDocSizes);
 				allDocLength = sortByValue(allDocLength);
-				//allDocs = sortByValue2(allDocs);
 			});
 		
-		//return docCount;
-		String wordOcc = printHashMap(uniqueWordsOcc,"Wort","Häufigkeit");
+		String wordOcc = printHashMap(sortByValue(uniqueWordsOcc),"Wort","Häufigkeit");
 		System.out.println("********** STATISTIK : **********");
 		System.out.println("Anzahl Dokumente: "+docCount);
 		System.out.println("Dokumentengrösse total: "+docSize/1000+" KB");
@@ -364,9 +392,7 @@ public class TextAnalyse {
 		
 		//word to search for needs to be defined at line 32
 		System.out.println("Die Wortsuche ergab folgende Treffer: \n"+findWordInFileNot+printHashMap(wordWasFoundIn,"Format Datei:Keyword","Gefunden"));
-		
-		//System.out.println("values von uniqueWordsOcc: "+uniqueWordsOcc.values());
-		
+		System.out.println("Glossary mit wichtigsten Wörtern: \n"+printHashMap(importantWordsGlossary(),"Datei","Anzahl Wörter"));
 	}
 	
 	private static void commandoCenter() {
@@ -375,13 +401,14 @@ public class TextAnalyse {
 			System.out.println("Befehl eingeben: (\"help\" für Hilfe   |   \"exit\" um zu beenden)");
 			Scanner scanInput = new Scanner(System.in);
 			String userInput = scanInput.nextLine();
-			//System.out.println("Ihre Eingabe: "+userInput);
 			switch(userInput) {
 	         case "search" :
 	        	 while (true) {
 	        		 System.out.println("Beenden durch Eingabe von \"return\"");
 	        		 System.out.println("Eingabe: Suchwort/-wörter/-phrase z.B. \"book\" oder \"the book\" (2 aufeinanderfolgende Wörter) oder \"the und book\" (beide müssen vorkommen; und ist Schlüsselwort)");
 	        		 System.out.println("oder \"the oder book\" (eins von beiden muss vorkommen; oder ist Schlüsselwort) oder \"the xor book\" (book darf NICHT vorkommen; xor ist Schlüsselwort)");
+	        		 System.out.println("oder \"student *\" (matcht auch Studenten; unvollständige Wörter unabhängig von Gross-/Kleinschreibung)");
+	        		 System.out.println("oder \"levi boo 80\" (benutzt Levenshtein-Distanz, um boo mit min. 80% Übereinstimmung zu finden)");
 	        		 String userInput2 = scanInput.nextLine();
 	        		 if (userInput2.equals("return")) {
 	        			 break;
@@ -402,7 +429,7 @@ public class TextAnalyse {
 	        	 }
 	         case "help" :
 	            System.out.println("Folgende Befehle sind verfügbar:");
-	            System.out.println("-search: Gibt aus wo (in welchen Dateien) und wie häufig das Suchwort vorkommt");
+	            System.out.println("-search: Gibt aus wo (in welchen Dateien) und wie häufig das Suchwort vorkommt. Suche mit Levenshtein-Distanz möglich");
 	            System.out.println("-size: Gibt alle Dateien aus oder nur diejenigen welche der Eingabe <, >, = Zahl (KB als double) \noder einer Kombination davon entsprechen");
 	            break;
 	         case "exit" :
